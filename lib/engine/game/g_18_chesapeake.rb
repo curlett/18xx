@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 require_relative '../config/game/g_18_chesapeake'
+require_relative '../g_18_chesapeake_2p/corporation'
+require_relative '../g_18_chesapeake/share_pool'
+require_relative '../round/g_18_chesapeake/stock'
 require_relative 'base'
 
 module Engine
@@ -25,6 +28,18 @@ module Engine
 
       SELL_BUY_ORDER = :sell_buy
 
+      def init_share_pool
+        Engine::G18Chesapeake::SharePool.new(self)
+      end
+
+      def corporation_class
+        if @players.size == 2
+          Engine::G18Chesapeake2p::Corporation
+        else
+          Engine::Corporation
+        end
+      end
+
       def action_processed(action)
         case action
         when Action::LayTile
@@ -34,7 +49,7 @@ module Engine
       end
 
       def stock_round
-        Round::Stock.new(self, [
+        Round::G18Chesapeake::Stock.new(self, [
           Step::DiscardTrain,
           Step::G18Chesapeake::SpecialTrack,
           Step::BuySellParShares,
@@ -62,6 +77,25 @@ module Engine
           when: :train,
           corporation: cornelius.abilities(:share).share.corporation.name,
         ))
+
+        return unless players.size == 2
+
+        puts '2p setup()'
+
+        corporation = cornelius.abilities(:share).share.corporation
+
+        presidents_share = corporation.shares_by_corporation[corporation].first
+        presidents_share.percent = 20
+
+        final_share = Share.new(corporation, president: true, percent: 10, index: 8)
+
+        corporation.shares_by_corporation[corporation] << final_share
+
+        puts corporation.shares_by_corporation[corporation]
+        puts corporation.shares_by_corporation[corporation].size
+        puts corporation.shares_by_corporation[corporation].map(&:percent).sum
+
+        # .init_shares([20, 10, 10, 10, 10, 10, 10, 10, 10])
       end
 
       def check_special_tile_lay(action, company)
@@ -89,6 +123,16 @@ module Engine
 
       def or_set_finished
         depot.export! if %w[2 3 4].include?(@depot.upcoming.first.name)
+      end
+
+      def float_corporation(corporation)
+        super
+
+        return unless players.size == 2
+
+        @log << "#{corporation.name}'s remaining shares are transferred to the Market"
+        bundle = ShareBundle.new(corporation.shares_of(corporation))
+        @share_pool.transfer_shares(bundle, @share_pool)
       end
     end
   end

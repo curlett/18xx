@@ -675,6 +675,15 @@ module Engine
         raise GameError.new(msg, current_action_id)
       end
 
+      def float_corporation(corporation)
+        @log << "#{corporation.name} floats"
+
+        return if corporation.capitalization == :incremental
+
+        @bank.spend(corporation.par_price.price * 10, corporation)
+        @log << "#{corporation.name} receives #{format_currency(corporation.cash)}"
+      end
+
       private
 
       def init_bank
@@ -728,11 +737,15 @@ module Engine
         self.class::MINORS.map { |minor| Minor.new(**minor) }
       end
 
+      def corporation_class
+        Corporation
+      end
+
       def init_corporations(stock_market)
         min_price = stock_market.par_prices.map(&:price).min
 
         self.class::CORPORATIONS.map do |corporation|
-          Corporation.new(
+          corporation_class.new(
             min_price: min_price,
             capitalization: self.class::CAPITALIZATION,
             **corporation,

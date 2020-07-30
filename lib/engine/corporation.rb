@@ -22,17 +22,27 @@ module Engine
     include ShareHolder
     include Spender
 
-    attr_accessor :ipoed, :share_price, :par_via_exchange
+    attr_accessor :ipoed, :share_price, :par_via_exchange, :num_deleted_shares
     attr_reader :capitalization, :companies, :min_price, :name, :full_name
     attr_writer :par_price
+
+    SHARE_PERCENTS = [20].concat([10] * 8)
+
+    def init_shares(percents)
+      shares_by_corporation.clear
+
+      [
+        Share.new(self, president: true, percent: percents[0]),
+        *percents[1..-1].each_with_index.map do |_percent, index|
+          Share.new(self, percent: percents[index + 1], index: index + 1)
+        end,
+      ].each { |share| shares_by_corporation[self] << share }
+    end
 
     def initialize(sym:, name:, **opts)
       @name = sym
       @full_name = name
-      [
-        Share.new(self, president: true, percent: 20),
-        *8.times.map { |index| Share.new(self, percent: 10, index: index + 1) },
-      ].each { |share| shares_by_corporation[self] << share }
+      init_shares(self.class::SHARE_PERCENTS)
 
       @share_price = nil
       @par_price = nil
@@ -46,6 +56,8 @@ module Engine
       @always_market_price = opts[:always_market_price] || false
       @needs_token_to_par = opts[:needs_token_to_par] || false
       @par_via_exchange = nil
+
+      @num_deleted_shares = 0
 
       init_abilities(opts[:abilities])
       init_operator(opts)
@@ -89,7 +101,7 @@ module Engine
     end
 
     def num_market_shares
-      10 - num_ipo_shares - num_player_shares
+      10 - num_ipo_shares - num_player_shares - num_deleted_shares
     end
 
     def share_holders

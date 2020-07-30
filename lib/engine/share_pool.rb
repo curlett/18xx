@@ -76,14 +76,7 @@ module Engine
         )
       end
 
-      return if floated == corporation.floated?
-
-      @log << "#{corporation.name} floats"
-
-      return if incremental
-
-      @bank.spend(par_price * 10, corporation)
-      @log << "#{corporation.name} receives #{@game.format_currency(corporation.cash)}"
+      @game.float_corporation(corporation) unless floated == corporation.floated?
     end
 
     def sell_shares(bundle)
