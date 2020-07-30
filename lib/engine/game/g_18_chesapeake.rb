@@ -80,8 +80,6 @@ module Engine
 
         return unless players.size == 2
 
-        puts '2p setup()'
-
         corporation = cornelius.abilities(:share).share.corporation
 
         presidents_share = corporation.shares_by_corporation[corporation].first
@@ -90,12 +88,6 @@ module Engine
         final_share = Share.new(corporation, president: true, percent: 10, index: 8)
 
         corporation.shares_by_corporation[corporation] << final_share
-
-        puts corporation.shares_by_corporation[corporation]
-        puts corporation.shares_by_corporation[corporation].size
-        puts corporation.shares_by_corporation[corporation].map(&:percent).sum
-
-        # .init_shares([20, 10, 10, 10, 10, 10, 10, 10, 10])
       end
 
       def check_special_tile_lay(action, company)
